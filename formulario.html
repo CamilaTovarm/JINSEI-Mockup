@@ -14,7 +14,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100vh;
+    min-height: 100vh;
   }
   .form-container {
     background: #fff;
@@ -23,8 +23,7 @@
     width: 100%;
     max-width: 420px;
     padding: 2.2rem 2rem 2rem;
-  }
-  /* Encabezado con logos */
+  }   
   .form-header-logos {
     display: flex;
     justify-content: space-between;
@@ -88,8 +87,7 @@
   }
   ::placeholder {
     font-size: 1rem;
-  }
-  /* Botón */
+  }   
   .btn-submit {
     margin-top: 0.8rem;
     background: #28538c;
@@ -107,11 +105,71 @@
   .btn-submit:hover {
     background: #4487e5;
   }
+  .btn-submit:disabled {
+    background: #ccc;
+    cursor: not-allowed;
+  }
+  .error-message {
+    color: #d32f2f;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+  .success-message {
+    color: #2e7d32;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+  .back-link {
+    text-align: center;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+  }
+  .back-link a {
+    color: #377e63;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .back-link a:hover {
+    text-decoration: underline;
+  }
+
+  /* Modal */
+  .modal {
+    display: none;
+    position: fixed;
+    z-index: 1000;
+    left: 0; top: 0;
+    width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    align-items: center; justify-content: center;
+  }
+  .modal-content {
+    background: #ffffff;
+    padding: 2rem;
+    border-radius: 20px;
+    text-align: center;
+    max-width: 400px;
+    box-shadow: 0 8px 25px #b5c7bb77;
+  }
+  .modal-content h2 { color: #28538c; margin-bottom: 1rem; }
+  .modal-content p { color: #355743; margin-bottom: 1.5rem; line-height: 1.5; }
+  .modal-content button {
+    padding: 0.8rem 1.5rem;
+    background: #28538c;
+    color: white;
+    border: none;
+    border-radius: 18px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color 0.3s ease;
+  }
+  .modal-content button:hover { background-color: #377e63; }
 </style>
 </head>
 <body>
-  <div class="form-container">
-    <!-- Logos arriba -->
+  <div class="form-container">  
     <div class="form-header-logos">
       <img src="iconapp.png" alt="Logo App" class="logo-app" />
       <img src="udec.png" alt="Logo Institución" class="logo-institucion" />
@@ -121,36 +179,121 @@
     <div class="form-desc">
       Por favor, completa tus datos y un orientador te contactará para brindarte acompañamiento.
     </div>
-    <form id="apoyoForm" onsubmit="handleSubmit(event)">
+    <form id="apoyoForm">
       <label for="fullName">Nombre completo</label>
       <input type="text" id="fullName" name="fullName" required placeholder="👤 Escribe tu nombre completo" />
       
       <label for="idType">Tipo de documento</label>
       <select id="idType" name="idType" required>
         <option value="" disabled selected>📄 Selecciona...</option>
-        <option value="DNI">DNI</option>
-        <option value="Cédula de Ciudadanía">Cédula de Ciudadanía</option>
-        <option value="Pasaporte">Pasaporte</option>
-        <option value="Otro">Otro</option>
+        <option value="1">Cédula de Ciudadanía</option>
+        <option value="2">Tarjeta de Identidad</option>
+        <option value="3">Cédula de Extranjería</option>
+        <option value="4">Pasaporte</option>
       </select>
 
       <label for="idNumber">Número de documento</label>
       <input type="text" id="idNumber" name="idNumber" required placeholder="🔢 Escribe tu número de documento" />
 
       <label for="email">Correo institucional</label>
-      <input type="email" id="email" name="email" required placeholder="📧 ejemplo@ucundinamarca.edu.co" />
+      <input type="email" id="email" name="email" required placeholder="📧 ejemplo@universidad.edu.co" />
 
       <label for="phone">Teléfono celular</label>
-      <input type="tel" id="phone" name="phone" required placeholder="📱 +57 321 123 5678" pattern="[\+0-9\s\-]{7,15}" />
+      <input type="tel" id="phone" name="phone" required placeholder="📱 +57 321 123 5678" pattern="[\+0-9\s\-]{7,20}" />
       
-      <button type="submit" class="btn-submit">Enviar solicitud 🚀</button>
+      <button type="submit" class="btn-submit" id="submitBtn">Enviar solicitud 🚀</button>
+      <div id="errorMessage" class="error-message"></div>
     </form>
+    <div class="back-link">
+      <a href="initChat.html">← Volver al chat</a>
+    </div>
   </div>
-  <script>
-    function handleSubmit(event) {
-      event.preventDefault();
-      alert("¡Solicitud enviada! Un orientador se pondrá en contacto contigo.");
+
+  <!-- Modal de confirmación -->
+  <div class="modal" id="successModal">
+    <div class="modal-content">
+      <h2>¡Solicitud Enviada! ✅</h2>
+      <p>Tu solicitud de apoyo ha sido registrada exitosamente.<br><br>
+      Un profesional de la institución se pondrá en contacto contigo a través de los datos que proporcionaste.<br><br>
+      <strong>Recuerda:</strong> No estás solo y siempre hay alguien dispuesto a ayudarte. 💙</p>
+      <button onclick="redirectToChat()">Volver al chat</button>
+    </div>
+  </div>
+
+<script>
+const API_URL = 'http://127.0.0.1:5000/api';
+
+// 🔥 1. Obtener session_id desde localStorage (del login)
+let sessionId = localStorage.getItem("session_id");
+
+if (!sessionId) {
+  console.error("⚠ No hay session_id en localStorage. El login debe guardarlo.");
+}
+
+document.getElementById('apoyoForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const fullName = document.getElementById('fullName').value.trim();
+  const idType = document.getElementById('idType').value;
+  const idNumber = document.getElementById('idNumber').value.trim();
+  const email = document.getElementById('email').value.trim();
+  const phone = document.getElementById('phone').value.trim();
+  const submitBtn = document.getElementById('submitBtn');
+  const errorMessage = document.getElementById('errorMessage');
+
+  errorMessage.textContent = '';
+
+  if (!fullName || !idType || !idNumber || !email || !phone) {
+    errorMessage.textContent = 'Por favor completa todos los campos.';
+    return;
+  }
+
+  if (!sessionId) {
+    errorMessage.textContent = 'Error: No se encontró la sesión. Inicia sesión nuevamente.';
+    return;
+  }
+
+  submitBtn.disabled = true;
+  submitBtn.textContent = 'Enviando solicitud...';
+
+  try {
+    const response = await fetch(`${API_URL}/consents`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        document_number: idNumber,
+        document_type_id: parseInt(idType),
+        email: email,
+        full_name: fullName,
+        phone: phone,
+        session_id: parseInt(sessionId)
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
+      document.getElementById('successModal').style.display = 'flex';
+    } else {
+      errorMessage.textContent = data.message || 'Error al enviar la solicitud.';
+      submitBtn.disabled = false;
+      submitBtn.textContent = 'Enviar solicitud 🚀';
     }
-  </script>
+
+  } catch (error) {
+    console.error('Error:', error);
+    errorMessage.textContent = 'Error al conectar con el servidor.';
+    submitBtn.disabled = false;
+    submitBtn.textContent = 'Enviar solicitud 🚀';
+  }
+});
+
+// 🔙 Regresar
+function redirectToChat() {
+  window.location.href = "initChat.html";
+}
+</script>
+
+
 </body>
-</html>
+</html>   

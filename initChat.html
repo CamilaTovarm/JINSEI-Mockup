@@ -102,6 +102,9 @@
             font-size:2rem;
             box-shadow:0 1px 5px #b5c7bb55;
         }
+        .user-avatar {
+            background:#ffe4b8;
+        }
         .chat-bubble {
             background: #fff;
             padding:14px 18px;
@@ -145,15 +148,34 @@
             cursor:pointer;
             transition: background 0.17s;
         }
-        .chat-send:hover {
-            background:#377e63;
+        .chat-send:hover { background:#377e63; }
+
+        /* ALERTA */
+        .alerta-alta {
+            background:#ffb3b3;
+            border-left:6px solid red;
+            padding:16px;
+            border-radius:10px;
+            color:#a10000;
+            font-weight:700;
+            font-size:1.15rem;
+            max-width:380px;
+        }
+        .boton-ayuda {
+            background:red;
+            color:white;
+            padding:10px 18px;
+            border-radius:10px;
+            border:none;
+            cursor:pointer;
+            margin-top:8px;
+            font-weight:700;
         }
     </style>
 </head>
 <body>
 <div class="container">
-    <div class="sidebar">
-        <!-- Implementa el logo aquí -->
+    <div class="sidebar">  
         <img src="iconapp.png" alt="Logo Jinsei" />
         <div class="bot-name">JINSEI</div>
         <div class="tagline">LIFE SUPPORT CHAT</div>
@@ -161,29 +183,118 @@
     </div>
     <div class="chat-area">
         <div class="chat-header">💬 Chat con Jinsei</div>
-        <div class="chat-messages">
-            <div class="chat-message">
-                <div class="bot-avatar">🤖</div>
-                <div class="chat-bubble">
-                    ¡Hola! Soy Jinsei 😊. Estoy aquí para escucharte y ayudarte.
-                </div>
-            </div>
-            <div class="chat-message">
-                <div class="bot-avatar">🤖</div>
-                <div class="chat-bubble">
-                    Estoy procesando tu mensaje...
-                </div>
-            </div>
-            <div class="chat-message" style="justify-content:flex-end;">
-                <div class="user-bubble chat-bubble">Hola</div>
-                <div class="user-avatar" style="background:#ffe4b8;">🧑</div>
-            </div>
-        </div>
-        <form class="chat-input-bar">
-            <input type="text" class="chat-input" placeholder="Escribe tu mensaje..." />
-            <button class="chat-send">Enviar</button>
-        </form>
+        <div id="chat-box" class="chat-messages"></div>
+        <div class="chat-input-bar">
+            <input id="mensaje" type="text" class="chat-input" placeholder="Escribe tu mensaje..." />
+            <button id="send-btn" class="chat-send">Enviar</button>
+        </div>   
     </div>
 </div>
+
+<script>
+const BERT_URL = "https://ciara-disillusive-unobservantly.ngrok-free.dev/predict";
+const MISTRAL_URL = "https://tackier-hebetic-jong.ngrok-free.dev/generar_respuesta";
+const API_URL = "http://127.0.0.1:5000/api";
+
+const user_id = Number(localStorage.getItem("user_id"));
+const session_id = Number(localStorage.getItem("session_id"));
+
+function agregarMensaje(texto, tipo, esAlerta=false) {
+    const box = document.getElementById("chat-box");
+    const cont = document.createElement("div");
+    cont.className = "chat-message";
+
+    if (tipo === "user") {
+        cont.style.justifyContent = "flex-end";
+        cont.innerHTML = `<div class="chat-bubble user-bubble">${texto}</div><div class="user-avatar">🧑</div>`;
+    } else {
+        if (esAlerta) {
+            cont.innerHTML = `
+                <div class="bot-avatar">⚠</div>
+                <div>
+                    <div class="alerta-alta">${texto}</div>
+                    <button class="boton-ayuda" onclick="location.href='formulario.html'">SI QUIERO AYUDA</button>
+                </div>
+            `;
+        } else {
+            cont.innerHTML = `<div class="bot-avatar">🤖</div><div class="chat-bubble">${texto}</div>`;
+        }
+    }
+
+    box.appendChild(cont);
+    box.scrollTop = box.scrollHeight;
+}
+
+function obtenerEtiqueta(riesgo) {
+    if (riesgo < 20) return "sin_riesgo";
+    if (riesgo < 50) return "riesgo_bajo";
+    return "riesgo_alto";
+}
+
+async function enviarMensaje(msg) {
+    agregarMensaje(msg, "user");
+
+    try {
+        // 1) BERT
+        const bertRes = await fetch(BERT_URL, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ texto: msg }) });
+        const bertData = await bertRes.json();
+        const riesgo = bertData?.porcentajes?.riesgo ?? 0;
+        const etiqueta = obtenerEtiqueta(riesgo);
+
+        // 2) Mistral
+        const mistralRes = await fetch(MISTRAL_URL, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ mensaje: msg, session_id, nivel_riesgo: etiqueta, historial: [] })
+        });
+        const data = await mistralRes.json();
+        const botResp = data.respuesta || "Error en Mistral.";
+
+        // 3) Guardar mensaje en BD
+        await fetch(`${API_URL}/messages`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                user_id,
+                user_response: msg,
+                bot_message: botResp,
+                risk_percent: riesgo
+            })
+        });
+
+        // 4) Mostrar mensaje normal
+        agregarMensaje(botResp, "bot");
+
+        // 5) Si es riesgo alto, mostrar alerta con mensaje **diferente**
+        if (etiqueta === "riesgo_alto") {
+            agregarMensaje(
+                "Detectamos señales de riesgo. No estás solo. ¿Quieres recibir ayuda profesional?",
+                "bot",
+                true
+            );
+        }
+
+
+    } catch (err) {
+        agregarMensaje("⚠ Error comunicándose con los servidores.", "bot");
+        console.error(err);
+    }
+}
+
+document.getElementById("send-btn").onclick = () => {
+    const msg = document.getElementById("mensaje").value.trim();
+    if (!msg) return;
+    document.getElementById("mensaje").value = "";
+    enviarMensaje(msg);
+};
+
+window.addEventListener("beforeunload", async () => {
+    if (!session_id) return;
+    try {
+        await fetch(`${API_URL}/sessions/${session_id}/end`, { method: "POST" });
+        console.log("Sesión cerrada al salir de la página.");
+    } catch (err) { console.error("Error cerrando sesión:", err); }
+});
+</script>
 </body>
 </html>
