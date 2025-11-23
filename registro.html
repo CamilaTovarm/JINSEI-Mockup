@@ -168,27 +168,46 @@
   </div>
 
   <script>
-    function handleRegister(e) {
-      e.preventDefault();
-      const alias = document.getElementById('newAlias').value;
-      const password = document.getElementById('newPassword').value;
-      const confirmPassword = document.getElementById('confirmPassword').value;
+const API_URL = "http://127.0.0.1:5000/api";
 
-      if(password !== confirmPassword) {
-        alert("Las contraseñas no coinciden.");
-        return;
-      }
+async function handleRegister(e) {
+  e.preventDefault();
 
-      // Aquí se podría enviar al servidor con fetch
-      // fetch('/api/register', { method: 'POST', body: JSON.stringify({ alias, password }) })
+  const alias = document.getElementById('newAlias').value.trim();
+  const password = document.getElementById('newPassword').value.trim();
+  const confirmPassword = document.getElementById('confirmPassword').value.trim();
 
-      // Mostrar modal
+  if (password !== confirmPassword) {
+    alert("Las contraseñas no coinciden.");
+    return;
+  }
+
+  try {
+    const response = await fetch(`${API_URL}/users`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        aka: alias,
+        password: password
+      })
+    });
+
+    const data = await response.json();
+
+    if (response.ok && data.success) {
       document.getElementById('successModal').style.display = 'flex';
+    } else {
+      alert(data.message || "Error al registrar el alias.");
     }
+  } catch (error) {
+    console.error(error);
+    alert("Error al conectar con el servidor.");
+  }
+}
 
-    function redirectToLogin() {
-      window.location.href = "index.html";
-    }
-  </script>
+function redirectToLogin() {
+  window.location.href = "index.html";
+}
+</script>
 </body>
 </html>

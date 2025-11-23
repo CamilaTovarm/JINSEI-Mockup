@@ -27,8 +27,7 @@
     overflow: hidden;
     box-shadow: 0 8px 25px #b5c7bb77;
   }
-
-  /* --- Izquierda --- */
+    
   .left {
     background: linear-gradient(180deg, #e5f5fa 60%, #b0cbc3 100%);
     padding: 3rem 2rem;
@@ -59,8 +58,7 @@
     line-height: 1.5;
     color: #355743;
   }
-
-  /* --- Derecha --- */
+   
   .right {
     padding: 3rem 2rem;
     display: flex;
@@ -90,6 +88,7 @@
     border: 1px solid #aac4b4;
     outline: none;
     font-size: 0.95rem;
+    box-sizing: border-box;
   }
   input:focus {
     border-color: #28538c;
@@ -112,8 +111,11 @@
   .btn-primary:hover {
     background-color: #377e63;
   }
-
-  /* link de registro */
+  .btn-primary:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+  }
+  
   .register-link {
     margin-top: 1rem;
     font-size: 0.9rem;
@@ -126,6 +128,13 @@
   }
   .register-link a:hover {
     text-decoration: underline;
+  }
+
+  .error-message {
+    color: #d32f2f;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    text-align: center;
   }
 
   @media (max-width: 768px) {
@@ -142,8 +151,7 @@
 </style>
 </head>
 <body>
-  <div class="wrapper">
-    <!-- Columna Izquierda -->
+  <div class="wrapper">  
     <div class="left">
       <img src="iconapp.png" alt="Jinsei Logo" class="logo" />
       <h1>JINSEI</h1>
@@ -155,11 +163,10 @@
         ⚠️ <em>Recuerda: tu alias no debe ser tu nombre real, ya que mantenemos el anonimato de los usuarios.</em>
       </p>
     </div>
-
-    <!-- Columna Derecha -->
+  
     <div class="right">
       <div class="container">
-        <form id="loginForm" onsubmit="handleLogin(event)">
+        <form id="loginForm">
           <div class="form-group">
             <label for="alias">Alias</label>
             <input type="text" id="alias" name="alias" placeholder="🥸 Escribe tu alias" required>
@@ -168,7 +175,8 @@
             <label for="password">Contraseña</label>
             <input type="password" id="password" name="password" placeholder="🔒 Escribe tu contraseña" required>
           </div>
-          <button type="submit" class="btn btn-primary">Ingresar al chat</button>
+          <button type="submit" class="btn btn-primary" id="loginBtn">Ingresar al chat</button>
+          <div id="errorMessage" class="error-message"></div>
         </form>
         <div class="register-link">
           ¿Primera vez aquí? <a href="registro.html">Crea tu alias anónimo</a>
@@ -177,18 +185,69 @@
     </div>
   </div>
 
-  <script>
-    function handleLogin(e) {
-      e.preventDefault();
-      const alias = document.getElementById('alias').value;
-      const password = document.getElementById('password').value;
+<script>
+  const API_URL = 'http://127.0.0.1:5000/api';
 
-      if(alias && password) {
-        alert("Bienvenido " + alias + " (modo anónimo)");
-        // Aquí redirigirías al chat real:
-        // window.location.href = "/chat";
+  document.getElementById('loginForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    const alias = document.getElementById('alias').value.trim();
+    const password = document.getElementById('password').value;
+    const loginBtn = document.getElementById('loginBtn');
+    const errorMessage = document.getElementById('errorMessage');
+
+    errorMessage.textContent = '';
+    loginBtn.disabled = true;
+    loginBtn.textContent = 'Iniciando sesión...';
+
+    try {
+      // Login
+      const loginResponse = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ aka: alias, password })
+      });
+      const loginData = await loginResponse.json();
+
+      if (!loginResponse.ok || !loginData.success) {
+        throw new Error(loginData.message || 'Usuario o contraseña incorrectos');
       }
+
+      const userId = loginData.data.UserId;
+      if (!userId) throw new Error('El backend no devolvió UserId.');
+
+      localStorage.setItem('user_id', userId);
+      localStorage.setItem('aka', alias);
+
+      // Crear sesión
+      const sessionResponse = await fetch(`${API_URL}/sessions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user_id: Number(userId) })
+      });
+      const sessionData = await sessionResponse.json();
+
+      if (!sessionResponse.ok || !sessionData.success) {
+        throw new Error(sessionData.message || 'Error al crear sesión');
+      }
+
+      // Guardar session_id
+      localStorage.setItem('session_id', sessionData.data.SessionId);
+
+      // Redirigir al chat
+      window.location.href = 'initChat.html';
+
+    } catch (error) {
+      console.error('Error:', error);
+      errorMessage.textContent = error.message || 'Error al conectar con el servidor.';
+      loginBtn.disabled = false;
+      loginBtn.textContent = 'Ingresar al chat';
     }
-  </script>
+  });
+</script>
+
+
+
+
 </body>
-</html>
+</html>   
