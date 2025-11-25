@@ -74,10 +74,41 @@
             font-weight:600;
             display:flex;
             align-items:center;
+            justify-content:space-between;
             gap:10px;
             letter-spacing:1px;
             font-size:1.08rem;
         }
+        
+        .chat-header-left {
+            display:flex;
+            align-items:center;
+            gap:10px;
+        }
+        
+        .logout-btn {
+            background:#8b5fb6;
+            color:#fff;
+            border:none;
+            padding:8px 18px;
+            font-size:0.95rem;
+            border-radius:10px;
+            font-weight:600;
+            cursor:pointer;
+            transition: all 0.3s ease;
+            box-shadow:0 2px 8px rgba(139, 95, 182, 0.3);
+        }
+        
+        .logout-btn:hover {
+            background:#7a4fa5;
+            transform:translateY(-2px);
+            box-shadow:0 4px 12px rgba(139, 95, 182, 0.4);
+        }
+        
+        .logout-btn:active {
+            transform:translateY(0);
+        }
+        
         .chat-messages {
             flex:1;
             padding:34px;
@@ -176,13 +207,18 @@
 <body>
 <div class="container">
     <div class="sidebar">  
-        <img src="iconapp.png" alt="Logo Jinsei" />
+        <img src="/assets/iconapp.png" alt="Logo Jinsei" />
         <div class="bot-name">JINSEI</div>
         <div class="tagline">LIFE SUPPORT CHAT</div>
         <div class="quote">"Cada día es una nueva oportunidad para empezar de nuevo 🧡💙"</div>
     </div>
     <div class="chat-area">
-        <div class="chat-header">💬 Chat con Jinsei</div>
+        <div class="chat-header">
+            <div class="chat-header-left">
+                💬 Chat con Jinsei
+            </div>
+            <button id="logout-btn" class="logout-btn">🚪 Cerrar Sesión</button>
+        </div>
         <div id="chat-box" class="chat-messages"></div>
         <div class="chat-input-bar">
             <input id="mensaje" type="text" class="chat-input" placeholder="Escribe tu mensaje..." />
@@ -194,10 +230,81 @@
 <script>
 const BERT_URL = "https://ciara-disillusive-unobservantly.ngrok-free.dev/predict";
 const MISTRAL_URL = "https://tackier-hebetic-jong.ngrok-free.dev/generar_respuesta";
-const API_URL = "jinsei-app-hjg9h0bqa7g5bhfh.canadacentral-01.azurewebsites.net/api";
+const API_URL = "https://jinsei-app-hjg9h0bqa7g5bhfh.canadacentral-01.azurewebsites.net/api";
 
 const user_id = Number(localStorage.getItem("user_id"));
 const session_id = Number(localStorage.getItem("session_id"));
+
+// Protección: verificar sesión válida al cargar la página
+if (!user_id || !session_id) {
+    console.warn("No hay sesión activa. Redirigiendo al login...");
+    localStorage.clear();
+    window.location.replace("index.html");
+}
+
+// Bloquear navegación hacia atrás
+(function() {
+    // Crear múltiples entradas en el historial
+    for (let i = 0; i < 10; i++) {
+        history.pushState(null, null, location.href);
+    }
+    
+    window.addEventListener('popstate', function() {
+        history.pushState(null, null, location.href);
+    });
+    
+    // Prevenir navegación con teclas
+    window.addEventListener('keydown', function(e) {
+        // Backspace fuera de inputs
+        if (e.keyCode === 8 && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+            e.preventDefault();
+        }
+        // Alt + Left Arrow (Atrás)
+        if (e.altKey && e.keyCode === 37) {
+            e.preventDefault();
+        }
+        // Alt + Right Arrow (Adelante)
+        if (e.altKey && e.keyCode === 39) {
+            e.preventDefault();
+        }
+    });
+})();
+
+// Función para cerrar sesión
+async function cerrarSesion() {
+    if (!session_id) {
+        console.error("No hay session_id para cerrar.");
+        localStorage.clear();
+        window.location.replace("index.html");
+        return;
+    }
+
+    try {
+        const response = await fetch(`${API_URL}/sessions/${session_id}/end`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" }
+        });
+
+        const data = await response.json();
+        
+        if (response.ok && data.success) {
+            console.log("Sesión cerrada exitosamente.");
+        } else {
+            console.error("Error al cerrar sesión:", data.message);
+        }
+    } catch (error) {
+        console.error("Error al cerrar sesión:", error);
+    } finally {
+        // Limpiar localStorage y redirigir sin historial
+        localStorage.removeItem("user_id");
+        localStorage.removeItem("session_id");
+        localStorage.removeItem("aka");
+        window.location.replace("index.html");
+    }
+}
+
+// Event listener para el botón de logout
+document.getElementById("logout-btn").addEventListener("click", cerrarSesion);
 
 function agregarMensaje(texto, tipo, esAlerta=false) {
     const box = document.getElementById("chat-box");
@@ -274,27 +381,54 @@ async function enviarMensaje(msg) {
             );
         }
 
-
     } catch (err) {
         agregarMensaje("⚠ Error comunicándose con los servidores.", "bot");
         console.error(err);
     }
 }
 
-document.getElementById("send-btn").onclick = () => {
+// Función para enviar mensaje
+function enviarMensajeInput() {
     const msg = document.getElementById("mensaje").value.trim();
     if (!msg) return;
     document.getElementById("mensaje").value = "";
     enviarMensaje(msg);
-};
+}
 
-window.addEventListener("beforeunload", async () => {
+// Event listener para el botón de enviar
+document.getElementById("send-btn").onclick = enviarMensajeInput;
+
+// Event listener para la tecla Enter
+document.getElementById("mensaje").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+        e.preventDefault();
+        enviarMensajeInput();
+    }
+});
+
+// Evento al cerrar la pestaña/navegador
+window.addEventListener("beforeunload", (e) => {
     if (!session_id) return;
-    try {
-        await fetch(`${API_URL}/sessions/${session_id}/end`, { method: "POST" });
-        console.log("Sesión cerrada al salir de la página.");
-    } catch (err) { console.error("Error cerrando sesión:", err); }
+    
+    // Usar sendBeacon para asegurar que la petición se envíe antes de cerrar
+    const data = JSON.stringify({});
+    navigator.sendBeacon(`${API_URL}/sessions/${session_id}/end`, data);
+    
+    // Limpiar localStorage
+    localStorage.removeItem("user_id");
+    localStorage.removeItem("session_id");
+    localStorage.removeItem("aka");
+    
+    console.log("Sesión cerrada al salir de la página.");
+});
+
+// Evento alternativo para navegadores que no soportan beforeunload correctamente
+window.addEventListener("unload", () => {
+    if (!session_id) return;
+    
+    // Intento adicional con sendBeacon
+    navigator.sendBeacon(`${API_URL}/sessions/${session_id}/end`, JSON.stringify({}));
 });
 </script>
 </body>
-</html>
+</html>       

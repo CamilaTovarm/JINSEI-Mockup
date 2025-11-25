@@ -65,6 +65,7 @@
     border: 1px solid #aac4b4;
     outline: none;
     font-size: 0.95rem;
+    box-sizing: border-box;
   }
   input:focus { border-color: #28538c; }
   .btn {
@@ -80,10 +81,25 @@
   }
   .btn-primary { background-color: #28538c; color: white; }
   .btn-primary:hover { background-color: #377e63; }
+  .btn-primary:disabled { background-color: #ccc; cursor: not-allowed; }
 
   .login-link { margin-top: 1rem; font-size: 0.9rem; color: #28538c; }
   .login-link a { color: #377e63; font-weight: 600; text-decoration: none; }
   .login-link a:hover { text-decoration: underline; }
+
+  .error-message {
+    color: #d32f2f;
+    font-size: 0.85rem;
+    margin-top: 0.5rem;
+    text-align: center;
+    background: #ffebee;
+    padding: 0.7rem;
+    border-radius: 10px;
+    border-left: 4px solid #d32f2f;
+    max-height: 150px;
+    overflow-y: auto;
+    display: none;
+  }
 
   /* Modal Pop-up */
   .modal {
@@ -136,7 +152,7 @@
     <!-- Columna Derecha -->
     <div class="right">
       <div class="container">
-        <form id="registerForm" onsubmit="handleRegister(event)">
+        <form id="registerForm">
           <div class="form-group">
             <label for="newAlias">Alias</label>
             <input type="text" id="newAlias" name="newAlias" placeholder="🥸 Elige tu alias" required>
@@ -149,7 +165,8 @@
             <label for="confirmPassword">Confirmar Contraseña</label>
             <input type="password" id="confirmPassword" name="confirmPassword" placeholder="🔒 Repite tu contraseña" required>
           </div>
-          <button type="submit" class="btn btn-primary">Crear alias y registrarse</button>
+          <button type="submit" class="btn btn-primary" id="registerBtn">Crear alias y registrarse</button>
+          <div id="errorMessage" class="error-message"></div>
         </form>
         <div class="login-link">
           ¿Ya tienes un alias? <a href="index.html">Inicia sesión aquí</a>
@@ -168,19 +185,66 @@
   </div>
 
   <script>
+// Deshabilitar navegación del navegador
+(function() {
+    // Verificar si el usuario viene de una página protegida
+    const referrer = document.referrer;
+    const protectedPages = ['formulario.html', 'initChat.html'];
+    const isFromProtectedPage = protectedPages.some(page => referrer.includes(page));
+    
+    if (isFromProtectedPage) {
+        // Limpiar historial y redirigir
+        window.location.replace('index.html');
+        return;
+    }
+    
+    // Agregar entrada al historial para prevenir ir hacia atrás
+    history.pushState(null, null, location.href);
+    
+    window.addEventListener('popstate', function() {
+        history.pushState(null, null, location.href);
+    });
+    
+    // Prevenir navegación con teclas
+    window.addEventListener('keydown', function(e) {
+        // Backspace fuera de inputs
+        if (e.keyCode === 8 && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+            e.preventDefault();
+        }
+        // Alt + Left Arrow (Atrás)
+        if (e.altKey && e.keyCode === 37) {
+            e.preventDefault();
+        }
+        // Alt + Right Arrow (Adelante)
+        if (e.altKey && e.keyCode === 39) {
+            e.preventDefault();
+        }
+    });
+})();
+
 const API_URL = "https://jinsei-app-hjg9h0bqa7g5bhfh.canadacentral-01.azurewebsites.net/api";
 
-async function handleRegister(e) {
+document.getElementById('registerForm').addEventListener('submit', async (e) => {
   e.preventDefault();
 
   const alias = document.getElementById('newAlias').value.trim();
   const password = document.getElementById('newPassword').value.trim();
   const confirmPassword = document.getElementById('confirmPassword').value.trim();
+  const registerBtn = document.getElementById('registerBtn');
+  const errorMessage = document.getElementById('errorMessage');
 
+  errorMessage.style.display = 'none';
+  errorMessage.textContent = '';
+
+  // Validación local de contraseñas
   if (password !== confirmPassword) {
-    alert("Las contraseñas no coinciden.");
+    errorMessage.textContent = 'Las contraseñas no coinciden.';
+    errorMessage.style.display = 'block';
     return;
   }
+
+  registerBtn.disabled = true;
+  registerBtn.textContent = 'Creando alias...';
 
   try {
     const response = await fetch(`${API_URL}/users`, {
@@ -197,17 +261,20 @@ async function handleRegister(e) {
     if (response.ok && data.success) {
       document.getElementById('successModal').style.display = 'flex';
     } else {
-      alert(data.message || "Error al registrar el alias.");
+      throw new Error(data.error || data.message || 'Error al registrar el alias');
     }
   } catch (error) {
-    console.error(error);
-    alert("Error al conectar con el servidor.");
+    console.error('Error completo:', error);
+    errorMessage.textContent = error.message || 'Error al conectar con el servidor.';
+    errorMessage.style.display = 'block';
+    registerBtn.disabled = false;
+    registerBtn.textContent = 'Crear alias y registrarse';
   }
-}
+});
 
 function redirectToLogin() {
   window.location.href = "index.html";
 }
 </script>
 </body>
-</html>
+</html>     
