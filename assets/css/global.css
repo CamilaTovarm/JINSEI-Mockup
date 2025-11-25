@@ -1,0 +1,223 @@
+/* ========================================
+   JINSEI - Estilos Globales
+   Variables CSS y estilos compartidos
+   ======================================== */
+
+/* Variables de color y tipografía */
+:root {
+  /* Colores principales */
+  --color-primary: #28538C;
+  --color-secondary: #5fa5b6;
+  --color-success: #377e63;
+  --color-accent: #b0cbc3;
+  --color-alert: #ff4d4d;
+  --color-text-dark: #28538C;
+  --color-text-light: #47775a;
+  --color-text-muted: #355743;
+  
+  /* Fondos */
+  --bg-gradient-main: radial-gradient(circle at 30% 30%, #f4ebea 0%, #c8e0d2 48%, #85c5a0 100%);
+  --bg-gradient-sidebar: linear-gradient(180deg, #e5f5fa 60%, #b0cbc3 100%);
+  --bg-gradient-chat: linear-gradient(120deg, #eafaf8 50%, #e3e9f4 110%);
+  --bg-white: #ffffff;
+  --bg-light: #f6fafb;
+  --bg-bubble-user: #e3e9f4;
+  --bg-bubble-bot: #fff;
+  
+  /* Tipografía */
+  --font-main: 'Montserrat', Arial, sans-serif;
+  --font-weight-normal: 400;
+  --font-weight-bold: 600;
+  --font-weight-extra-bold: 700;
+  
+  /* Espaciados */
+  --spacing-xs: 0.5rem;
+  --spacing-sm: 1rem;
+  --spacing-md: 1.5rem;
+  --spacing-lg: 2rem;
+  --spacing-xl: 3rem;
+  
+  /* Bordes y sombras */
+  --border-radius-sm: 9px;
+  --border-radius-md: 15px;
+  --border-radius-lg: 20px;
+  --border-radius-xl: 30px;
+  --border-radius-round: 50%;
+  
+  --shadow-sm: 0 1px 5px rgba(181, 199, 187, 0.33);
+  --shadow-md: 0 2px 12px rgba(181, 199, 187, 0.13);
+  --shadow-lg: 0 4px 32px rgba(181, 199, 187, 0.19);
+  --shadow-xl: 0 8px 25px rgba(181, 199, 187, 0.47);
+}
+
+/* Reset y estilos base */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-main);
+  background: var(--bg-gradient-main);
+  color: var(--color-text-dark);
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+}
+
+/* Tipografía global */
+h1, h2, h3, h4, h5, h6 {
+  color: var(--color-primary);
+  font-weight: var(--font-weight-extra-bold);
+}
+
+a {
+  color: var(--color-success);
+  text-decoration: none;
+  transition: opacity 0.2s ease;
+}
+
+a:hover {
+  opacity: 0.8;
+}
+
+/* Botones globales */
+.btn {
+  padding: 0.9rem 1.5rem;
+  font-size: 1rem;
+  font-weight: var(--font-weight-bold);
+  border-radius: var(--border-radius-lg);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: inline-block;
+  text-align: center;
+}
+
+.btn-primary {
+  background-color: var(--color-primary);
+  color: white;
+}
+
+.btn-primary:hover {
+  background-color: var(--color-success);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.btn-primary:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-secondary {
+  background-color: var(--color-secondary);
+  color: white;
+}
+
+.btn-secondary:hover {
+  background-color: var(--color-success);
+}
+
+.btn-danger {
+  background-color: var(--color-alert);
+  color: white;
+}
+
+/* Inputs y formularios */
+input,
+select,
+textarea {
+  width: 100%;
+  padding: 0.7rem 1rem;
+  border-radius: var(--border-radius-sm);
+  border: 1px solid #c8e0d2;
+  outline: none;
+  font-size: 1rem;
+  font-family: var(--font-main);
+  background: var(--bg-light);
+  color: var(--color-text-dark);
+  box-shadow: 0 1px 4px rgba(233, 237, 245, 0.13);
+  transition: all 0.24s ease;
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 8px rgba(40, 83, 140, 0.33);
+}
+
+label {
+  display: block;
+  font-weight: var(--font-weight-bold);
+  font-size: 0.9rem;
+  margin-bottom: 0.3rem;
+  color: var(--color-success);
+}
+
+.form-group {
+  margin-bottom: 1.2rem;
+}
+
+/* Mensajes de error y éxito */
+.error-message {
+  color: #d32f2f;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.success-message {
+  color: #2e7d32;
+  font-size: 0.85rem;
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+/* Logo y branding */
+.logo {
+  width: 130px;
+  border-radius: var(--border-radius-round);
+  box-shadow: var(--shadow-lg);
+  background: #e9f3ec;
+}
+
+.bot-name {
+  font-size: 2.2rem;
+  font-weight: var(--font-weight-extra-bold);
+  color: var(--color-primary);
+  letter-spacing: 1px;
+}
+
+.tagline {
+  font-size: 1.2rem;
+  color: var(--color-secondary);
+  font-weight: var(--font-weight-bold);
+}
+
+/* Utilidades */
+.text-center {
+  text-align: center;
+}
+
+.mt-1 { margin-top: var(--spacing-sm); }
+.mt-2 { margin-top: var(--spacing-md); }
+.mt-3 { margin-top: var(--spacing-lg); }
+
+.mb-1 { margin-bottom: var(--spacing-sm); }
+.mb-2 { margin-bottom: var(--spacing-md); }
+.mb-3 { margin-bottom: var(--spacing-lg); }
+
+/* Responsive */
+@media (max-width: 768px) {
+  :root {
+    font-size: 14px;
+  }
+  
+  .btn {
+    padding: 0.8rem 1.2rem;
+  }
+}
