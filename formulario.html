@@ -224,11 +224,73 @@
 <script>
 const API_URL = 'https://jinsei-app-hjg9h0bqa7g5bhfh.canadacentral-01.azurewebsites.net/api';
 
-// Obtener session_id desde localStorage (del login)
+// Protección: verificar que venimos de initChat con sesión válida
+(function() {
+    // PRIMERO: Prevenir que CUALQUIER código borre localStorage
+    const originalClear = Storage.prototype.clear;
+    const originalRemoveItem = Storage.prototype.removeItem;
+    
+    Storage.prototype.clear = function() {
+        console.error('⚠️ INTENTO DE BORRAR localStorage BLOQUEADO');
+        console.trace(); // Mostrar desde dónde se intentó borrar
+        // NO ejecutar el clear
+    };
+    
+    Storage.prototype.removeItem = function(key) {
+        if (key === 'user_id' || key === 'session_id' || key === 'aka') {
+            console.error('⚠️ INTENTO DE BORRAR', key, 'BLOQUEADO');
+            console.trace();
+            // NO ejecutar el removeItem
+        } else {
+            originalRemoveItem.call(this, key);
+        }
+    };
+    
+    const user_id = localStorage.getItem("user_id");
+    const session_id = localStorage.getItem("session_id");
+    
+    console.log('📄 Formulario cargado');
+    console.log('🔍 Verificando sesión:', { user_id, session_id });
+    
+    // Si no hay sesión, redirigir al login
+    if (!user_id || !session_id) {
+        console.error("⚠️ No hay sesión activa. Redirigiendo al login...");
+        // Restaurar métodos originales antes de limpiar
+        Storage.prototype.clear = originalClear;
+        Storage.prototype.removeItem = originalRemoveItem;
+        localStorage.clear();
+        window.location.replace("index.html");
+        return;
+    }
+    
+    console.log('✅ Sesión válida encontrada');
+    
+    // Bloquear navegación hacia atrás
+    history.pushState(null, null, location.href);
+    
+    window.addEventListener('popstate', function() {
+        history.pushState(null, null, location.href);
+    });
+    
+    // Prevenir navegación con teclas
+    window.addEventListener('keydown', function(e) {
+        if (e.keyCode === 8 && !['INPUT', 'TEXTAREA'].includes(e.target.tagName)) {
+            e.preventDefault();
+        }
+        if (e.altKey && e.keyCode === 37) {
+            e.preventDefault();
+        }
+        if (e.altKey && e.keyCode === 39) {
+            e.preventDefault();
+        }
+    });
+})();
+
+// Obtener session_id desde localStorage
 let sessionId = localStorage.getItem("session_id");
 
 if (!sessionId) {
-  console.error("⚠ No hay session_id en localStorage. El login debe guardarlo.");
+  console.error("⚠ No hay session_id en localStorage.");
 }
 
 document.getElementById('apoyoForm').addEventListener('submit', async (e) => {

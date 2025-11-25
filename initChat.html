@@ -87,7 +87,7 @@
         }
         
         .logout-btn {
-            background:#8b5fb6;
+            background:#2A3960;
             color:#fff;
             border:none;
             padding:8px 18px;
@@ -100,7 +100,7 @@
         }
         
         .logout-btn:hover {
-            background:#7a4fa5;
+            background:#1e2a46;
             transform:translateY(-2px);
             box-shadow:0 4px 12px rgba(139, 95, 182, 0.4);
         }
@@ -217,7 +217,7 @@
             <div class="chat-header-left">
                 💬 Chat con Jinsei
             </div>
-            <button id="logout-btn" class="logout-btn">🚪 Cerrar Sesión</button>
+            <button id="logout-btn" class="logout-btn">Cerrar Sesión 👋</button>
         </div>
         <div id="chat-box" class="chat-messages"></div>
         <div class="chat-input-bar">
@@ -237,9 +237,13 @@ const session_id = Number(localStorage.getItem("session_id"));
 
 // Protección: verificar sesión válida al cargar la página
 if (!user_id || !session_id) {
-    console.warn("No hay sesión activa. Redirigiendo al login...");
+    console.warn("⚠️ No hay sesión activa. Redirigiendo al login...");
     localStorage.clear();
     window.location.replace("index.html");
+} else {
+    console.log('✅ Sesión activa en chat:', { user_id, session_id });
+    // Cargar historial de mensajes previos
+    cargarHistorial();
 }
 
 // Bloquear navegación hacia atrás
@@ -295,10 +299,8 @@ async function cerrarSesion() {
     } catch (error) {
         console.error("Error al cerrar sesión:", error);
     } finally {
-        // Limpiar localStorage y redirigir sin historial
-        localStorage.removeItem("user_id");
-        localStorage.removeItem("session_id");
-        localStorage.removeItem("aka");
+        // Limpiar localStorage completo (incluyendo historial del chat)
+        localStorage.clear();
         window.location.replace("index.html");
     }
 }
@@ -306,7 +308,25 @@ async function cerrarSesion() {
 // Event listener para el botón de logout
 document.getElementById("logout-btn").addEventListener("click", cerrarSesion);
 
-function agregarMensaje(texto, tipo, esAlerta=false) {
+// Cargar historial de mensajes al iniciar
+function cargarHistorial() {
+    const historial = JSON.parse(localStorage.getItem('chat_history') || '[]');
+    console.log('📜 Cargando historial:', historial.length, 'mensajes');
+    
+    historial.forEach(msg => {
+        agregarMensajeAlDOM(msg.texto, msg.tipo, msg.esAlerta);
+    });
+}
+
+// Guardar mensaje en el historial
+function guardarMensajeEnHistorial(texto, tipo, esAlerta = false) {
+    const historial = JSON.parse(localStorage.getItem('chat_history') || '[]');
+    historial.push({ texto, tipo, esAlerta });
+    localStorage.setItem('chat_history', JSON.stringify(historial));
+}
+
+// Agregar mensaje al DOM (sin guardarlo)
+function agregarMensajeAlDOM(texto, tipo, esAlerta = false) {
     const box = document.getElementById("chat-box");
     const cont = document.createElement("div");
     cont.className = "chat-message";
@@ -330,6 +350,12 @@ function agregarMensaje(texto, tipo, esAlerta=false) {
 
     box.appendChild(cont);
     box.scrollTop = box.scrollHeight;
+}
+
+// Función pública para agregar mensaje (guarda Y muestra)
+function agregarMensaje(texto, tipo, esAlerta = false) {
+    agregarMensajeAlDOM(texto, tipo, esAlerta);
+    guardarMensajeEnHistorial(texto, tipo, esAlerta);
 }
 
 function obtenerEtiqueta(riesgo) {
@@ -406,29 +432,37 @@ document.getElementById("mensaje").addEventListener("keypress", (e) => {
     }
 });
 
-// Evento al cerrar la pestaña/navegador
-window.addEventListener("beforeunload", (e) => {
-    if (!session_id) return;
-    
-    // Usar sendBeacon para asegurar que la petición se envíe antes de cerrar
-    const data = JSON.stringify({});
-    navigator.sendBeacon(`${API_URL}/sessions/${session_id}/end`, data);
-    
-    // Limpiar localStorage
-    localStorage.removeItem("user_id");
-    localStorage.removeItem("session_id");
-    localStorage.removeItem("aka");
-    
-    console.log("Sesión cerrada al salir de la página.");
+// Detectar cuando la página se vuelve invisible (cambio de pestaña o cierre)
+let pageHiddenTime = null;
+
+document.addEventListener('visibilitychange', () => {
+    if (document.hidden) {
+        // La página se ocultó (cambio de pestaña o cierre)
+        pageHiddenTime = Date.now();
+        console.log('👁️ Página oculta');
+    } else {
+        // La página volvió a ser visible (regresó a la pestaña)
+        pageHiddenTime = null;
+        console.log('👁️ Página visible nuevamente');
+    }
 });
 
-// Evento alternativo para navegadores que no soportan beforeunload correctamente
-window.addEventListener("unload", () => {
+// Solo cerrar sesión cuando realmente se cierra la pestaña/navegador
+window.addEventListener("pagehide", (e) => {
     if (!session_id) return;
     
-    // Intento adicional con sendBeacon
-    navigator.sendBeacon(`${API_URL}/sessions/${session_id}/end`, JSON.stringify({}));
+    // Si la página está siendo descartada (cierre real), cerrar sesión
+    // e.persisted indica si la página va al caché (navegación) o se descarta (cierre)
+    if (!e.persisted) {
+        console.log('Cierre real de pestaña detectado - cerrando sesión');
+        navigator.sendBeacon(`${API_URL}/sessions/${session_id}/end`, JSON.stringify({}));
+        
+        // Limpiar localStorage completo
+        localStorage.clear();
+    } else {
+        console.log('➡️ Navegación interna - manteniendo sesión');
+    }
 });
 </script>
 </body>
-</html>       
+</html>

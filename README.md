@@ -62,20 +62,7 @@ JINSEI es un chatbot de apoyo emocional diseñado para ayudar a estudiantes univ
 ```bash
 git clone https://github.com/CamilaTovarm/JINSEI-Mockup.git
 cd JINSEI-Mockup
-```
-
-### Configurar URLs del backend
-
-Edita el archivo `assets/js/config.js` y actualiza las URLs:
-
-```javascript
-const CONFIG = {
-  API: {
-    BASE_URL: 'http://localhost:5000/api'  // Para desarrollo local
-  },
-  // ...
-};
-```
+```   
 
 ### Ejecutar localmente
 
@@ -145,17 +132,7 @@ git push origin main
 - ✅ Conexiones HTTPS
 - ✅ CORS configurado correctamente
 - ✅ Datos personales solo en formulario de ayuda (con consentimiento)
-
-## 📊 Variables de entorno
-
-El archivo `config.js` contiene las siguientes configuraciones:
-
-```javascript
-CONFIG.API.BASE_URL        // URL del backend
-CONFIG.AI.BERT_URL         // URL del modelo BERT
-CONFIG.AI.MISTRAL_URL      // URL del modelo Mistral
-CONFIG.RISK_LEVELS         // Umbrales de riesgo
-```
+     
 
 ## 📞 Recursos de ayuda
 
