@@ -1,10 +1,9 @@
 # 🧡💙 JINSEI - Life Support Chat
 
-> Sistema de apoyo emocional para estudiantes universitarios en Colombia
+> Prototipo de un sistema de alertas tempranas para la identificación de conductas suicidas en jóvenes Universitarios
 
 ![Estado del Deploy](https://img.shields.io/badge/deploy-Azure-blue)
-![Versión](https://img.shields.io/badge/version-1.1.0-green)
-![Licencia](https://img.shields.io/badge/license-MIT-yellow)
+![Versión](https://img.shields.io/badge/version-1.1.0-green)      
 
 ## 📋 Descripción
 
@@ -32,34 +31,7 @@ JINSEI es un chatbot de apoyo emocional diseñado para ayudar a estudiantes univ
        │
        └──────────────────▶ (Acceso directo)
 ```
-
-## 📁 Estructura del proyecto
-
-```
-jinsei-frontend/
-├── index.html                    # Página de login
-├── pages/
-│   ├── registro.html            # Registro de usuarios
-│   ├── chat.html                # Chat principal
-│   └── formulario.html          # Solicitud de ayuda
-├── assets/
-│   ├── css/
-│   │   ├── global.css          # Estilos compartidos
-│   │   ├── login.css           # Estilos del login
-│   │   └── chat.css            # Estilos del chat
-│   ├── js/
-│   │   ├── config.js           # Configuración central
-│   │   ├── api.js              # Cliente API
-│   │   ├── auth.js             # Autenticación
-│   │   └── chat.js             # Lógica del chat
-│   └── images/
-│       ├── iconapp.png         # Logo de la app
-│       └── udec.png            # Logo institucional
-├── .github/
-│   └── workflows/
-│       └── azure-static-web-apps.yml  # CI/CD
-└── README.md
-```
+    
 
 ## 🚀 Tecnologías utilizadas
 
@@ -69,7 +41,8 @@ jinsei-frontend/
 - GitHub Actions (CI/CD)
 
 ### Backend
-- Python Flask
+- Python Flask 
+- Documentacion en Swagger
 - Azure App Service
 - Azure SQL Database
 
