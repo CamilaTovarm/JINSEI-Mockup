@@ -15,14 +15,16 @@
     align-items: center;
     justify-content: center;
     min-height: 100vh;
+    padding: 2rem 0;
   }
   .form-container {
     background: #fff;
     border-radius: 24px;
     box-shadow: 0 6px 28px #28538c22;
     width: 100%;
-    max-width: 420px;
+    max-width: 520px;
     padding: 2.2rem 2rem 2rem;
+    margin: 1rem;
   }   
   .form-header-logos {
     display: flex;
@@ -49,15 +51,45 @@
     color: #5fa5b6;
     font-size: 1rem;
     margin-bottom: 1.2rem;
-    max-width: 420px;
     text-align: center;
   }
+  
+  /* Aviso legal */
+  .legal-notice {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-left: 4px solid #ff9800;
+    border-radius: 12px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    font-size: 0.85rem;
+    line-height: 1.6;
+    color: #856404;
+  }
+  
+  .legal-notice .notice-icon {
+    font-size: 1.3rem;
+    margin-bottom: 0.5rem;
+    display: block;
+  }
+  
+  .legal-notice strong {
+    display: block;
+    font-size: 0.95rem;
+    margin-bottom: 0.5rem;
+    color: #664d03;
+  }
+  
+  .legal-notice p {
+    margin: 0.5rem 0;
+    text-align: justify;
+  }
+  
   form {
     display: flex;
     flex-direction: column;
     gap: 0.9rem;
     margin-top: 1rem;
-    max-width: 420px;
     text-align: left;
   }
   label {
@@ -87,7 +119,40 @@
   }
   ::placeholder {
     font-size: 1rem;
-  }   
+  }
+  
+  /* Checkbox de consentimiento */
+  .consent-checkbox {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.7rem;
+    margin-top: 0.5rem;
+    padding: 0.8rem;
+    background: #f0f8ff;
+    border-radius: 10px;
+    border: 1px solid #b3d9ff;
+  }
+  
+  .consent-checkbox input[type="checkbox"] {
+    width: auto;
+    margin-top: 0.2rem;
+    cursor: pointer;
+    min-width: 18px;
+    min-height: 18px;
+  }
+  
+  .consent-checkbox label {
+    color: #1a5490;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    cursor: pointer;
+    margin: 0;
+  }
+  
+  .consent-checkbox label strong {
+    font-weight: 700;
+  }
+     
   .btn-submit {
     margin-top: 0.8rem;
     background: #28538c;
@@ -152,6 +217,7 @@
     border-radius: 20px;
     text-align: center;
     max-width: 400px;
+    margin: 1rem;
     box-shadow: 0 8px 25px #b5c7bb77;
   }
   .modal-content h2 { color: #28538c; margin-bottom: 1rem; }
@@ -180,6 +246,23 @@
     <div class="form-desc">
       Por favor, completa tus datos y un orientador te contactará para brindarte acompañamiento.
     </div>
+    
+    <!-- Aviso Legal de Protección de Datos -->
+    <div class="legal-notice">
+      <span class="notice-icon">⚠️</span>
+      <strong>Protección de Datos Personales</strong>
+      <p>
+        De acuerdo con la <strong>Ley 1581 de 2012</strong> de protección de datos personales en Colombia, 
+        al enviar este formulario autorizas expresamente a la institución para recopilar, almacenar, 
+        usar y tratar tus datos personales con el fin exclusivo de brindarte apoyo y acompañamiento profesional.
+      </p>
+      <p style="margin-top: 0.7rem;">
+        Tus datos serán manejados de manera confidencial y solo serán compartidos con los profesionales 
+        autorizados para tu atención. Tienes derecho a conocer, actualizar, rectificar y suprimir tu información 
+        en cualquier momento.
+      </p>
+    </div>
+    
     <form id="apoyoForm">
       <label for="fullName">Nombre completo</label>
       <input type="text" id="fullName" name="fullName" required placeholder="👤 Escribe tu nombre completo" />
@@ -201,6 +284,15 @@
 
       <label for="phone">Teléfono celular</label>
       <input type="tel" id="phone" name="phone" required placeholder="📱 +57 321 123 5678" pattern="[\+0-9\s\-]{7,20}" />
+      
+      <!-- Checkbox de consentimiento -->
+      <div class="consent-checkbox">
+        <input type="checkbox" id="consentCheck" name="consentCheck" required />
+        <label for="consentCheck">
+          <strong>Acepto</strong> que mis datos personales sean tratados conforme a la Ley 1581 de 2012 
+          para recibir apoyo y acompañamiento profesional.
+        </label>
+      </div>
       
       <button type="submit" class="btn-submit" id="submitBtn">Enviar solicitud 🚀</button>
       <div id="errorMessage" class="error-message"></div>
@@ -232,7 +324,7 @@ const API_URL = 'https://jinsei-app-hjg9h0bqa7g5bhfh.canadacentral-01.azurewebsi
     
     Storage.prototype.clear = function() {
         console.error('⚠️ INTENTO DE BORRAR localStorage BLOQUEADO');
-        console.trace(); // Mostrar desde dónde se intentó borrar
+        console.trace();
         // NO ejecutar el clear
     };
     
@@ -240,8 +332,9 @@ const API_URL = 'https://jinsei-app-hjg9h0bqa7g5bhfh.canadacentral-01.azurewebsi
         if (key === 'user_id' || key === 'session_id' || key === 'aka') {
             console.error('⚠️ INTENTO DE BORRAR', key, 'BLOQUEADO');
             console.trace();
-            // NO ejecutar el removeItem
+            // NO ejecutar el removeItem para datos de sesión
         } else {
+            // Permitir borrar otras cosas (como chat_history si es necesario)
             originalRemoveItem.call(this, key);
         }
     };
@@ -301,6 +394,7 @@ document.getElementById('apoyoForm').addEventListener('submit', async (e) => {
   const idNumber = document.getElementById('idNumber').value.trim();
   const email = document.getElementById('email').value.trim();
   const phone = document.getElementById('phone').value.trim();
+  const consentCheck = document.getElementById('consentCheck').checked;
   const submitBtn = document.getElementById('submitBtn');
   const errorMessage = document.getElementById('errorMessage');
 
@@ -309,6 +403,12 @@ document.getElementById('apoyoForm').addEventListener('submit', async (e) => {
 
   if (!fullName || !idType || !idNumber || !email || !phone) {
     errorMessage.textContent = 'Por favor completa todos los campos.';
+    errorMessage.style.display = 'block';
+    return;
+  }
+  
+  if (!consentCheck) {
+    errorMessage.textContent = 'Debes aceptar el tratamiento de datos personales para continuar.';
     errorMessage.style.display = 'block';
     return;
   }
